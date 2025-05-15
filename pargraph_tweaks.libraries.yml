@@ -1,0 +1,4 @@
+magnific-popup:
+  css:
+    theme:
+      css/form.css: { }

@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Contains paragraph_tweaks.module.
+ */
+
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\paragraphs\Entity\Paragraph as Paragraph;
+
+/**
+ * Implements hook_help().
+ */
+function paragraph_tweaks_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the paragraph_tweaks module.
+    case 'help.page.paragraph_tweaks':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Provides some tweaks to paragraphs') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Alter the ds layout render array.
+ *s
+ * @param array $layout_render_array
+ *   The render array.
+ * @param array $context
+ *   An array with the context that is being rendered. Available keys are:
+ *   - entity
+ *   - entity_type
+ *   - bundle
+ *   - view_mode
+ * @param array $vars
+ *   All variables available for render. You can use this to add css classes.
+ */
+function paragraph_tweaks_preprocess_paragraph(array &$vars) {
+  /**
+   * @var \Drupal\paragraphs\Entity\Paragraph $paragraph
+   */
+  $paragraph = $vars['paragraph'];
+  $vars['attributes']['id'] = 'paragraph-id--' . $paragraph->id();
+
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for 'paragraph'.
+ * This is for feeds importer to attach the paragraphs to the parent field.
+ * @param Paragraph $paragraph
+ * @throws InvalidPluginDefinitionException
+ * @throws PluginNotFoundException
+ * @throws EntityStorageException
+ */
+function paragraph_tweaks_paragraph_insert(Paragraph $paragraph) {
+  if (empty($type_stub = $paragraph->get('parent_type')->getValue())) {
+    return;
+  }
+  if (empty($field_name_stub = $paragraph->get('parent_field_name')->getValue())) {
+    return;
+  }
+  if (empty($parent_id_stub = $paragraph->get('parent_id')->getValue())) {
+    return;
+  }
+  $parent_type = $type_stub[0]['value'];
+  $parent_field_name = $field_name_stub[0]['value'];
+  $parent_id = $parent_id_stub[0]['value'];
+
+  $parent_entity = \Drupal::entityTypeManager()->getStorage($parent_type)->load($parent_id);
+  if ($parent_entity) {
+    // Check if parent already has a reference to this paragraph.
+    foreach ($parent_entity->get($parent_field_name)->getValue() as $item) {
+      if (!empty($this_sub_item = Paragraph::load($item['target_id']))) {
+        if ($this_sub_item->id() == $paragraph->id()) {
+          // Paragraph found. Abort.
+          return;
+        }
+      }
+    }
+
+    $parent_entity->get($parent_field_name)->appendItem($paragraph);
+    $parent_entity->save();
+  }
+}
