@@ -46,7 +46,7 @@ function paragraph_tweaks_preprocess_paragraph(array &$vars) {
    * @var \Drupal\paragraphs\Entity\Paragraph $paragraph
    */
   $paragraph = $vars['paragraph'];
-  $vars['attributes']['id'] = 'paragraph-id--' . $paragraph->id();
+  $vars['attributes']['id'] = 'paragraph-id-' . $paragraph->id();
 
 }
 

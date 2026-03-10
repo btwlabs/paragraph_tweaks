@@ -1,0 +1,9 @@
+{
+  "name": "btwlabs/paragraph_tweaks",
+  "description": "Custom module: paragraph_tweaks.",
+  "type": "drupal-custom-module",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "drupal/core": "^11"
+  }
+}
